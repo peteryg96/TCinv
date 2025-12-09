@@ -1,0 +1,84 @@
+inventory-management-system/
+├── frontend/                          # React frontend application
+│   ├── public/
+│   │   ├── index.html
+│   │   └── favicon.ico
+│   ├── src/
+│   │   ├── components/               # Reusable UI components
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── ProductList.jsx
+│   │   │   ├── ProductForm.jsx
+│   │   │   ├── StockEditor.jsx
+│   │   │   ├── APISettings.jsx
+│   │   │   └── Navbar.jsx
+│   │   ├── pages/                    # Main page components
+│   │   │   ├── DashboardPage.jsx
+│   │   │   ├── ProductsPage.jsx
+│   │   │   ├── OrdersPage.jsx
+│   │   │   └── SettingsPage.jsx
+│   │   ├── services/                 # API service layer
+│   │   │   ├── api.js               # Base API configuration
+│   │   │   ├── productService.js
+│   │   │   ├── inventoryService.js
+│   │   │   └── syncService.js
+│   │   ├── hooks/                    # Custom React hooks
+│   │   │   ├── useProducts.js
+│   │   │   └── useSync.js
+│   │   ├── utils/                    # Utility functions
+│   │   │   └── helpers.js
+│   │   ├── App.jsx                   # Main App component (save the artifact code here)
+│   │   ├── index.js                  # Entry point
+│   │   └── index.css                 # Global styles
+│   ├── package.json
+│   ├── tailwind.config.js
+│   └── .env                          # Frontend environment variables
+│
+├── backend/                           # Node.js/Express backend
+│   ├── src/
+│   │   ├── config/                   # Configuration files
+│   │   │   ├── database.js
+│   │   │   └── platforms.js
+│   │   ├── controllers/              # Route controllers
+│   │   │   ├── productController.js
+│   │   │   ├── inventoryController.js
+│   │   │   ├── orderController.js
+│   │   │   └── syncController.js
+│   │   ├── services/                 # Business logic
+│   │   │   ├── shopeeService.js     # Shopee API integration
+│   │   │   ├── lazadaService.js     # Lazada API integration
+│   │   │   ├── tiktokService.js     # TikTok API integration
+│   │   │   └── syncService.js       # Cross-platform sync logic
+│   │   ├── models/                   # Database models
+│   │   │   ├── Product.js
+│   │   │   ├── Inventory.js
+│   │   │   ├── Order.js
+│   │   │   └── PlatformConfig.js
+│   │   ├── routes/                   # API routes
+│   │   │   ├── products.js
+│   │   │   ├── inventory.js
+│   │   │   ├── orders.js
+│   │   │   ├── sync.js
+│   │   │   └── auth.js
+│   │   ├── middleware/               # Express middleware
+│   │   │   ├── auth.js
+│   │   │   ├── errorHandler.js
+│   │   │   └── validation.js
+│   │   ├── utils/                    # Utility functions
+│   │   │   ├── encryption.js
+│   │   │   └── logger.js
+│   │   └── server.js                 # Express app entry point
+│   ├── package.json
+│   └── .env                          # Backend environment variables (API keys, DB credentials)
+│
+├── database/                          # Database related files
+│   ├── migrations/                   # Database migrations
+│   └── seeds/                        # Seed data for testing
+│
+├── docs/                             # Documentation
+│   ├── API.md
+│   ├── SETUP.md
+│   └── DEPLOYMENT.md
+│
+├── .gitignore
+├── README.md
+└── docker-compose.yml                # For containerization (optional)
