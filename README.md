@@ -1,3 +1,4 @@
 # TCinv
-Inventory system for online platform integration
+Inventory system for online platform integration.
+
 Made with Claude AI
