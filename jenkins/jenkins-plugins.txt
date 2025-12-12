@@ -1,0 +1,12 @@
+workflow-aggregator:latest
+docker-workflow:latest
+git:latest
+github:latest
+slack:latest
+junit:latest
+htmlpublisher:latest
+ssh-agent:latest
+credentials-binding:latest
+pipeline-stage-view:latest
+blueocean:latest
+nodejs:latest
