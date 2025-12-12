@@ -1,0 +1,40 @@
+#!/bin/bash
+
+echo "🔍 Running pre-commit checks..."
+
+# Check for merge conflict markers
+if git diff --cached | grep -E "^[<=>]{7}"; then
+    echo "❌ Merge conflict markers found. Please resolve conflicts before committing."
+    exit 1
+fi
+
+# Run linters
+echo "📝 Running linters..."
+cd backend && npm run lint
+if [ $? -ne 0 ]; then
+    echo "❌ Backend linting failed"
+    exit 1
+fi
+
+cd ../frontend && npm run lint
+if [ $? -ne 0 ]; then
+    echo "❌ Frontend linting failed"
+    exit 1
+fi
+
+# Check for console.log statements (optional)
+echo "🔍 Checking for console.log statements..."
+if git diff --cached --name-only | grep -E '\.(js|jsx|ts|tsx)$' | xargs grep -n "console\.log" 2>/dev/null; then
+    echo "⚠️  Warning: console.log statements found. Consider removing them."
+    # Uncomment to make this a hard failure:
+    # exit 1
+fi
+
+# Check for .env files
+if git diff --cached --name-only | grep -E "\.env$"; then
+    echo "❌ .env files should not be committed"
+    exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"
+exit 0
