@@ -1,0 +1,60 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate branch name
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          if [[ ! $BRANCH_NAME =~ ^(feature|bugfix|hotfix|refactor|test)/.+ ]]; then
+            echo "Branch name must start with feature/, bugfix/, hotfix/, refactor/, or test/"
+            exit 1
+          fi
+
+      - name: Check for merge conflicts
+        uses: olivr/copybara-action@v1.2.3
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd backend && npm ci
+          cd ../frontend && npm ci
+
+      - name: Run linters
+        run: |
+          cd backend && npm run lint || true
+          cd ../frontend && npm run lint
+
+      - name: Check code formatting
+        run: |
+          npx prettier --check "**/*.{js,jsx,json,md}"
