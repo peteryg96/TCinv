@@ -1,0 +1,21 @@
+#!/bin/bash
+
+echo "🧪 Running pre-push checks..."
+
+# Run tests
+echo "Running backend tests..."
+cd backend && npm test
+if [ $? -ne 0 ]; then
+    echo "❌ Backend tests failed"
+    exit 1
+fi
+
+echo "Running frontend tests..."
+cd ../frontend && npm test
+if [ $? -ne 0 ]; then
+    echo "❌ Frontend tests failed"
+    exit 1
+fi
+
+echo "✅ All tests passed!"
+exit 0
