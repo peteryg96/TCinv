@@ -1,16 +1,16 @@
 # Add a 'backend' label if files change within the 'backend' directory
 backend:
-- changed_files:
+- changed-files:
   - any-glob-to-any-file: backend/**
 
 # Add a 'frontend' label if files change within the 'frontend' or 'ui' directories
 frontend:
-- changed_files:
+- changed-files:
   - any-glob-to-any-file: frontend/**
 
 # Add a 'workflow' label if files change within the 'workflow' directory or any markdown files
 workflow:
-- changed_files:
+- changed-files:
   - any-glob-to-any-file:
     - .github/workflows/**
     - '**/*.yml'
