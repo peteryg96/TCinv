@@ -1,14 +1,27 @@
 # Add a 'backend' label if files change within the 'backend' directory
 backend:
-  - 'backend/**'
+- changed_files:
+  - any-glob-to-any-file: backend/**
 
 # Add a 'frontend' label if files change within the 'frontend' or 'ui' directories
 frontend:
-  - 'frontend/**'
+- changed_files:
+  - any-glob-to-any-file: frontend/**
 
 # Add a 'workflow' label if files change within the 'workflow' directory or any markdown files
 workflow:
-  - '.github/workflows/**'
-  - '*.yml'
-  - '*.yaml'
-  - 'jenkins/**'
+- changed_files:
+  - any-glob-to-any-file:
+    - .github/workflows/**
+    - '**/*.yml'
+    - '**/*.yaml'
+    - jenkins/**
+
+# Add 'Documentation' label to any change to .md files within the entire repository 
+Documentation:
+- changed-files:
+  - any-glob-to-any-file: '**/*.md'
+
+# Add 'release' label to any PR that is opened against the `main` branch
+release:
+ - base-branch: 'main'
