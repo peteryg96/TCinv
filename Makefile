@@ -279,3 +279,23 @@ setup-hooks: ## Setup git hooks
 	@cp scripts/pre-push .git/hooks/pre-push
 	@chmod +x .git/hooks/pre-push
 	@echo "${GREEN}Git hooks installed!${RESET}"
+
+# Add monitoring commands
+
+monitoring-up: ## Start monitoring stack
+	cd monitoring && docker-compose up -d
+
+monitoring-down: ## Stop monitoring stack
+	cd monitoring && docker-compose down
+
+monitoring-logs: ## View monitoring logs
+	cd monitoring && docker-compose logs -f
+
+prometheus: ## Open Prometheus UI
+	@echo "Opening Prometheus at http://localhost:9090"
+	@open http://localhost:9090 || xdg-open http://localhost:9090
+
+grafana: ## Open Grafana UI
+	@echo "Opening Grafana at http://localhost:3001"
+	@echo "Default credentials: admin/admin"
+	@open http://localhost:3001 || xdg-open http://localhost:3001
