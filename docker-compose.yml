@@ -92,6 +92,21 @@ services:
     networks:
       - inventory-network
 
+mongodb-exporter:
+    image: percona/mongodb_exporter:0.40
+    container_name: mongodb-exporter
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb:27017
+    ports:
+      - "9216:9216"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - inventory-network
+      - monitoring
+
 volumes:
   mongodb_data:
     driver: local
@@ -101,3 +116,8 @@ volumes:
 networks:
   inventory-network:
     driver: bridge
+  monitoring:
+    external: true
+    name: monitoring_monitoring
+
+
