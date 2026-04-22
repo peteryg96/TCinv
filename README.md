@@ -3,14 +3,19 @@ Inventory system for online platform integration.
 
 Made with Claude AI
 
-
-For testing, change directory into frontend or backend then run npm to setup:
-
-cd frontend
-
-npm install --save-dev @testing-library/react @testing-library/jest-dom @testing-library/user-event vitest jsdom
-
+# Backend installs
 cd backend
+npm install express cors mongoose dotenv axios crypto-js
+npm install --save-dev nodemon
+# Run
+npm run dev
 
-npm install --save-dev jest supertest mongodb-memory-server @types/jest
-
+# Frontend installs
+cd frontend
+npm install react react-dom
+npm install --save-dev @vitejs/plugin-react vite
+npm install lucide-react
+npm install -D tailwindcss@3 postcss autoprefixer
+npx tailwindcss init -p
+# Run
+npm run dev
