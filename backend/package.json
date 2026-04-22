@@ -1,0 +1,14 @@
+{
+  "name": "inventory-backend",
+  "version": "1.0.0",
+  "description": "Inventory management backend with Shopee integration",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "echo \"Tests will be added later\" && exit 0"
+  },
+  "keywords": ["inventory", "shopee", "ecommerce"],
+  "author": "",
+  "license": "ISC"
+}
