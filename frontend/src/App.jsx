@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Package, RefreshCw, Plus, Trash2, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import api from './services/api';
 import ProductForm from './components/ProductForm';
+import SearchBar from './components/SearchBar';
 
 export default function App() {
   const [products, setProducts] = useState([]);
@@ -12,6 +13,7 @@ export default function App() {
   const [backendStatus, setBackendStatus] = useState('checking');
   const [editingStock, setEditingStock] = useState({});
   const [showProductForm, setShowProductForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     checkBackendHealth();
@@ -130,6 +132,12 @@ export default function App() {
       setError('Failed to delete product: ' + err.message);
     }
   };
+
+  // Filter products based on search query
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.sku.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (backendStatus === 'checking') {
     return (
@@ -254,9 +262,21 @@ export default function App() {
 
         {/* Products Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Products</h2>
-            <p className="text-sm text-gray-500 mt-1">Click on stock value, change it, then click outside to save</p>
+          <div className="px-6 py-4 border-b border-gray-200 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Products</h2>
+                <p className="text-sm text-gray-500 mt-1">Click on stock value, change it, then click outside to save</p>
+              </div>
+              <div className="text-sm text-gray-600">
+                Showing {filteredProducts.length} of {products.length} products
+              </div>
+            </div>
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              onClear={() => setSearchQuery('')}
+            />
           </div>
 
           {loading ? (
@@ -264,25 +284,39 @@ export default function App() {
               <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
               <p className="text-gray-600">Loading products...</p>
             </div>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <div className="p-12 text-center">
               <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-600 mb-4">No products found</p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => setShowProductForm(true)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Product
-                </button>
-                <button
-                  onClick={handleSyncShopee}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-                >
-                  Sync from Shopee
-                </button>
-              </div>
+              {searchQuery ? (
+                <>
+                  <p className="text-gray-600 mb-4">No products found matching "{searchQuery}"</p>
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    Clear Search
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-600 mb-4">No products found</p>
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={() => setShowProductForm(true)}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Product
+                    </button>
+                    <button
+                      onClick={handleSyncShopee}
+                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                    >
+                      Sync from Shopee
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -298,7 +332,7 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {products.map(product => (
+                  {filteredProducts.map(product => (
                     <tr key={product._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="font-medium text-gray-900">{product.name}</div>
