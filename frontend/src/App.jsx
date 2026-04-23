@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Package, RefreshCw, Trash2, AlertCircle, CheckCircle, XCircle, Save } from 'lucide-react';
+import { Package, RefreshCw, Plus, Trash2, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import api from './services/api';
+import ProductForm from './components/ProductForm';
 
 export default function App() {
   const [products, setProducts] = useState([]);
@@ -10,13 +11,12 @@ export default function App() {
   const [success, setSuccess] = useState(null);
   const [backendStatus, setBackendStatus] = useState('checking');
   const [editingStock, setEditingStock] = useState({});
+  const [showProductForm, setShowProductForm] = useState(false);
 
-  // Check backend health on mount
   useEffect(() => {
     checkBackendHealth();
   }, []);
 
-  // Load products on mount
   useEffect(() => {
     if (backendStatus === 'connected') {
       loadProducts();
@@ -72,7 +72,6 @@ export default function App() {
   };
 
   const handleStockChange = (productId, value) => {
-    // Update local state immediately for responsive UI
     setEditingStock(prev => ({
       ...prev,
       [productId]: value
@@ -82,17 +81,13 @@ export default function App() {
   const handleStockBlur = async (productId) => {
     const newStock = editingStock[productId];
     
-    // If no change, do nothing
     if (newStock === undefined) return;
 
     try {
       setError(null);
-      console.log(`Updating stock for product ${productId} to ${newStock}`);
-      
       await api.updateShopeeStock(productId, parseInt(newStock));
       await loadProducts();
       
-      // Clear editing state
       setEditingStock(prev => {
         const newState = { ...prev };
         delete newState[productId];
@@ -102,12 +97,22 @@ export default function App() {
       setSuccess('Stock updated successfully');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      console.error('Stock update error:', err);
       setError('Failed to update stock: ' + err.message);
       setTimeout(() => setError(null), 5000);
-      
-      // Reload to reset the value
       await loadProducts();
+    }
+  };
+
+  const handleCreateProduct = async (productData) => {
+    try {
+      setError(null);
+      await api.createProduct(productData);
+      await loadProducts();
+      setShowProductForm(false);
+      setSuccess('Product created successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError('Failed to create product: ' + err.message);
     }
   };
 
@@ -165,14 +170,23 @@ export default function App() {
               <Package className="w-8 h-8 text-orange-600" />
               <h1 className="text-2xl font-bold text-gray-900">Shopee Inventory Manager</h1>
             </div>
-            <button
-              onClick={handleSyncShopee}
-              disabled={syncing}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors"
-            >
-              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? 'Syncing...' : 'Sync from Shopee'}
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowProductForm(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Add Product
+              </button>
+              <button
+                onClick={handleSyncShopee}
+                disabled={syncing}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'Syncing...' : 'Sync from Shopee'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -254,12 +268,21 @@ export default function App() {
             <div className="p-12 text-center">
               <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
               <p className="text-gray-600 mb-4">No products found</p>
-              <button
-                onClick={handleSyncShopee}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-              >
-                Sync from Shopee
-              </button>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setShowProductForm(true)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Product
+                </button>
+                <button
+                  onClick={handleSyncShopee}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                >
+                  Sync from Shopee
+                </button>
+              </div>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -326,6 +349,14 @@ export default function App() {
           )}
         </div>
       </div>
+
+      {/* Product Form Modal */}
+      {showProductForm && (
+        <ProductForm
+          onClose={() => setShowProductForm(false)}
+          onSubmit={handleCreateProduct}
+        />
+      )}
     </div>
   );
 }
