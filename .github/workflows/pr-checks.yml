@@ -26,12 +26,6 @@ jobs:
             exit 1
           fi
 
-      - name: Check for merge conflicts
-        uses: olivr/copybara-action@v1.2.3
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-          ssh_key: ${{ secrets.TCINVACTIONS }}
-
   code-quality:
     name: Code Quality Check
     runs-on: ubuntu-latest
