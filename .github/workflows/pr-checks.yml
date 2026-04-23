@@ -30,7 +30,7 @@ jobs:
         uses: olivr/copybara-action@v1.2.3
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh_key: ${{ secrets.TCINVACTIONS }}
 
   code-quality:
     name: Code Quality Check
