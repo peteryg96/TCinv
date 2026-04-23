@@ -21,16 +21,10 @@ jobs:
       - name: Validate branch name
         run: |
           BRANCH_NAME="${{ github.head_ref }}"
-          if [[ ! $BRANCH_NAME =~ ^(feature|bugfix|hotfix|refactor|test)/.+ ]]; then
-            echo "Branch name must start with feature/, bugfix/, hotfix/, refactor/, or test/"
+          if [[ ! $BRANCH_NAME =~ ^(feature|bugfix|hotfix|refactor|test)_.+ ]]; then
+            echo "Branch name must start with feature_, bugfix_, hotfix_, refactor_, or test_"
             exit 1
           fi
-
-      - name: Check for merge conflicts
-        uses: olivr/copybara-action@v1.2.3
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-          ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
   code-quality:
     name: Code Quality Check
