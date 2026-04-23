@@ -13,11 +13,15 @@ class ApiService {
     };
 
     try {
+      console.log('API Request:', config.method || 'GET', url, options.body ? JSON.parse(options.body) : '');
+      
       const response = await fetch(url, config);
       const data = await response.json();
 
+      console.log('API Response:', response.status, data);
+
       if (!response.ok) {
-        throw new Error(data.error || 'Request failed');
+        throw new Error(data.error || `Request failed with status ${response.status}`);
       }
 
       return data;
@@ -55,10 +59,12 @@ class ApiService {
     });
   }
 
+  // Update local Shopee stock (not via Shopee API)
   async updateShopeeStock(id, stock) {
+    console.log('Updating stock for product:', id, 'to:', stock);
     return this.request(`/products/${id}/shopee/stock`, {
       method: 'PATCH',
-      body: JSON.stringify({ stock }),
+      body: JSON.stringify({ stock: Number(stock) }),
     });
   }
 
@@ -68,7 +74,7 @@ class ApiService {
     });
   }
 
-  // Shopee
+  // Shopee API operations
   async testShopeeConnection() {
     return this.request('/shopee/test-connection');
   }
@@ -83,10 +89,10 @@ class ApiService {
     });
   }
 
-  async updateShopeeStock(productId, stock) {
+  async updateStockViaShopeeAPI(productId, stock) {
     return this.request(`/shopee/update-stock/${productId}`, {
       method: 'POST',
-      body: JSON.stringify({ stock }),
+      body: JSON.stringify({ stock: Number(stock) }),
     });
   }
 }

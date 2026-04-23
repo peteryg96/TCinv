@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, RefreshCw, Plus, Edit2, Trash2, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Package, RefreshCw, Trash2, AlertCircle, CheckCircle, XCircle, Save } from 'lucide-react';
 import api from './services/api';
 
 export default function App() {
@@ -9,6 +9,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [backendStatus, setBackendStatus] = useState('checking');
+  const [editingStock, setEditingStock] = useState({});
 
   // Check backend health on mount
   useEffect(() => {
@@ -70,14 +71,43 @@ export default function App() {
     }
   };
 
-  const handleStockUpdate = async (productId, newStock) => {
+  const handleStockChange = (productId, value) => {
+    // Update local state immediately for responsive UI
+    setEditingStock(prev => ({
+      ...prev,
+      [productId]: value
+    }));
+  };
+
+  const handleStockBlur = async (productId) => {
+    const newStock = editingStock[productId];
+    
+    // If no change, do nothing
+    if (newStock === undefined) return;
+
     try {
+      setError(null);
+      console.log(`Updating stock for product ${productId} to ${newStock}`);
+      
       await api.updateShopeeStock(productId, parseInt(newStock));
       await loadProducts();
+      
+      // Clear editing state
+      setEditingStock(prev => {
+        const newState = { ...prev };
+        delete newState[productId];
+        return newState;
+      });
+      
       setSuccess('Stock updated successfully');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
+      console.error('Stock update error:', err);
       setError('Failed to update stock: ' + err.message);
+      setTimeout(() => setError(null), 5000);
+      
+      // Reload to reset the value
+      await loadProducts();
     }
   };
 
@@ -212,6 +242,7 @@ export default function App() {
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Products</h2>
+            <p className="text-sm text-gray-500 mt-1">Click on stock value, change it, then click outside to save</p>
           </div>
 
           {loading ? (
@@ -257,9 +288,15 @@ export default function App() {
                       <td className="px-6 py-4 text-center">
                         <input
                           type="number"
-                          value={product.shopee?.stock || 0}
-                          onChange={(e) => handleStockUpdate(product._id, e.target.value)}
-                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded"
+                          value={editingStock[product._id] !== undefined ? editingStock[product._id] : (product.shopee?.stock || 0)}
+                          onChange={(e) => handleStockChange(product._id, e.target.value)}
+                          onBlur={() => handleStockBlur(product._id)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.target.blur();
+                            }
+                          }}
+                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                           min="0"
                         />
                       </td>
