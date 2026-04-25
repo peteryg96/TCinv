@@ -21,8 +21,9 @@ jobs:
       - name: Validate branch name
         run: |
           BRANCH_NAME="${{ github.head_ref }}"
-          if [[ ! $BRANCH_NAME =~ ^(feature|bugfix|hotfix|refactor|test)_.+ ]]; then
-            echo "Branch name must start with feature_, bugfix_, hotfix_, refactor_, or test_"
+          # Added 'master' and 'release' to the allowed regex
+          if [[ ! $BRANCH_NAME =~ ^(feature|bugfix|hotfix|refactor|test|master|release)_.+ ]]; then
+            echo "Branch name must start with feature_, bugfix_, hotfix_, refactor_, test_, master_, or release_"
             exit 1
           fi
 
