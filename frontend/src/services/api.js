@@ -3,7 +3,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 class ApiService {
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -14,7 +14,7 @@ class ApiService {
 
     try {
       console.log('API Request:', config.method || 'GET', url, options.body ? JSON.parse(options.body) : '');
-      
+
       const response = await fetch(url, config);
       const data = await response.json();
 
@@ -31,14 +31,17 @@ class ApiService {
     }
   }
 
-  // Health check
+  // ========== Health & Status ==========
+
   async checkHealth() {
     return this.request('/health');
   }
 
-  // Products
-  async getProducts() {
-    return this.request('/products');
+  // ========== Products ==========
+
+  async getProducts(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    return this.request(`/products${params ? '?' + params : ''}`);
   }
 
   async getProduct(id) {
@@ -53,13 +56,13 @@ class ApiService {
   }
 
   async updateProduct(id, productData) {
+    console.log('Updating product:', id, productData);
     return this.request(`/products/${id}`, {
       method: 'PUT',
       body: JSON.stringify(productData),
     });
   }
 
-  // Update local Shopee stock (not via Shopee API)
   async updateShopeeStock(id, stock) {
     console.log('Updating stock for product:', id, 'to:', stock);
     return this.request(`/products/${id}/shopee/stock`, {
@@ -68,19 +71,37 @@ class ApiService {
     });
   }
 
-  async deleteProduct(id) {
+  async deleteProduct(id, password) {
     return this.request(`/products/${id}`, {
       method: 'DELETE',
+      body: JSON.stringify({ password }),
     });
   }
 
-  // Shopee API operations
+  async getCategories() {
+    return this.request('/products/meta/categories');
+  }
+
+  // ========== Shopee API ==========
+  // Note: accessToken is no longer passed from the frontend.
+  // The backend middleware (shopeeAuth) loads it automatically from MongoDB.
+
+  async getShopeeEnvironment() {
+    return this.request('/shopee/environment');
+  }
+
   async testShopeeConnection() {
     return this.request('/shopee/test-connection');
   }
 
+  async getShopeeAuthUrl() {
+    return this.request('/shopee/auth/url');
+  }
+
   async getShopeeShopInfo() {
-    return this.request('/shopee/shop-info');
+    return this.request('/shopee/shop-info', {
+      method: 'POST',
+    });
   }
 
   async syncShopeeProducts() {
@@ -93,6 +114,19 @@ class ApiService {
     return this.request(`/shopee/update-stock/${productId}`, {
       method: 'POST',
       body: JSON.stringify({ stock: Number(stock) }),
+    });
+  }
+
+  async getShopeeCategoryList() {
+    return this.request('/shopee/categories', {
+      method: 'POST',
+    });
+  }
+
+  async getShopeeBrandList(categoryId) {
+    return this.request('/shopee/brands', {
+      method: 'POST',
+      body: JSON.stringify({ categoryId }),
     });
   }
 }

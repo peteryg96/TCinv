@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Package, RefreshCw, Plus, Trash2, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Package, RefreshCw, Plus, Trash2, Edit2, AlertCircle, CheckCircle, XCircle, Filter } from 'lucide-react';
 import api from './services/api';
 import ProductForm from './components/ProductForm';
+import ProductEditModal from './components/ProductEditModal';
+import DeleteConfirmModal from './components/DeleteConfirmModal';
 import SearchBar from './components/SearchBar';
 
 export default function App() {
@@ -13,7 +15,12 @@ export default function App() {
   const [backendStatus, setBackendStatus] = useState('checking');
   const [editingStock, setEditingStock] = useState({});
   const [showProductForm, setShowProductForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [deletingProduct, setDeletingProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     checkBackendHealth();
@@ -22,6 +29,7 @@ export default function App() {
   useEffect(() => {
     if (backendStatus === 'connected') {
       loadProducts();
+      loadCategories();
     }
   }, [backendStatus]);
 
@@ -52,20 +60,25 @@ export default function App() {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const response = await api.getCategories();
+      setCategories(response.data || []);
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+    }
+  };
+
   const handleSyncShopee = async () => {
     try {
       setSyncing(true);
       setError(null);
       setSuccess(null);
-      
+
       const response = await api.syncShopeeProducts();
-      
-      if (response.success) {
-        setSuccess(response.message);
-        await loadProducts();
-      } else {
-        setError('Sync failed: ' + (response.error || 'Unknown error'));
-      }
+      await loadProducts();
+      setSuccess(`Synced ${response.synced} products from Shopee`);
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError('Failed to sync with Shopee: ' + err.message);
     } finally {
@@ -82,20 +95,20 @@ export default function App() {
 
   const handleStockBlur = async (productId) => {
     const newStock = editingStock[productId];
-    
+
     if (newStock === undefined) return;
 
     try {
       setError(null);
       await api.updateShopeeStock(productId, parseInt(newStock));
       await loadProducts();
-      
+
       setEditingStock(prev => {
         const newState = { ...prev };
         delete newState[productId];
         return newState;
       });
-      
+
       setSuccess('Stock updated successfully');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -110,6 +123,7 @@ export default function App() {
       setError(null);
       await api.createProduct(productData);
       await loadProducts();
+      await loadCategories();
       setShowProductForm(false);
       setSuccess('Product created successfully');
       setTimeout(() => setSuccess(null), 3000);
@@ -118,26 +132,46 @@ export default function App() {
     }
   };
 
-  const handleDeleteProduct = async (productId) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) {
-      return;
-    }
-
+  const handleUpdateProduct = async (productData) => {
     try {
-      await api.deleteProduct(productId);
+      setError(null);
+      await api.updateProduct(editingProduct._id, productData);
       await loadProducts();
-      setSuccess('Product deleted successfully');
+      await loadCategories();
+      setEditingProduct(null);
+      setSuccess('Product updated successfully');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to delete product: ' + err.message);
+      setError('Failed to update product: ' + err.message);
     }
   };
 
-  // Filter products based on search query
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleDeleteProduct = async (password) => {
+    try {
+      setError(null);
+      await api.deleteProduct(deletingProduct._id, password);
+      await loadProducts();
+      setDeletingProduct(null);
+      setSuccess('Product deleted successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      throw new Error(err.message || 'Failed to delete product');
+    }
+  };
+
+  // Filter products
+  const filteredProducts = products.filter(product => {
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+
+    const matchesStatus = statusFilter === 'all' || product.shopee?.status === statusFilter;
+
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
 
   if (backendStatus === 'checking') {
     return (
@@ -260,23 +294,52 @@ export default function App() {
           </div>
         </div>
 
+        {/* Filters & Search */}
+        <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
+          <div className="p-4 border-b">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-5 h-5 text-gray-600" />
+              <h3 className="font-semibold text-gray-900">Filters</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <SearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                onClear={() => setSearchQuery('')}
+              />
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="all">All Categories</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="all">All Status</option>
+                <option value="NORMAL">Normal</option>
+                <option value="UNLIST">Unlisted</option>
+                <option value="DELETED">Deleted</option>
+                <option value="BANNED">Banned</option>
+              </select>
+            </div>
+          </div>
+          <div className="px-4 py-2 bg-gray-50 text-sm text-gray-600">
+            Showing {filteredProducts.length} of {products.length} products
+          </div>
+        </div>
+
         {/* Products Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Products</h2>
-                <p className="text-sm text-gray-500 mt-1">Click on stock value, change it, then click outside to save</p>
-              </div>
-              <div className="text-sm text-gray-600">
-                Showing {filteredProducts.length} of {products.length} products
-              </div>
-            </div>
-            <SearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              onClear={() => setSearchQuery('')}
-            />
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Products</h2>
+            <p className="text-sm text-gray-500 mt-1">Click on stock value to edit, or use action buttons to manage products</p>
           </div>
 
           {loading ? (
@@ -287,14 +350,18 @@ export default function App() {
           ) : filteredProducts.length === 0 ? (
             <div className="p-12 text-center">
               <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-              {searchQuery ? (
+              {searchQuery || categoryFilter !== 'all' || statusFilter !== 'all' ? (
                 <>
-                  <p className="text-gray-600 mb-4">No products found matching "{searchQuery}"</p>
+                  <p className="text-gray-600 mb-4">No products match your filters</p>
                   <button
-                    onClick={() => setSearchQuery('')}
+                    onClick={() => {
+                      setSearchQuery('');
+                      setCategoryFilter('all');
+                      setStatusFilter('all');
+                    }}
                     className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                   >
-                    Clear Search
+                    Clear Filters
                   </button>
                 </>
               ) : (
@@ -308,12 +375,6 @@ export default function App() {
                       <Plus className="w-4 h-4" />
                       Add Product
                     </button>
-                    <button
-                      onClick={handleSyncShopee}
-                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-                    >
-                      Sync from Shopee
-                    </button>
                   </div>
                 </>
               )}
@@ -325,8 +386,9 @@ export default function App() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Category</th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Price</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Shopee Stock</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Stock</th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
                   </tr>
@@ -336,9 +398,15 @@ export default function App() {
                     <tr key={product._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="font-medium text-gray-900">{product.name}</div>
-                        <div className="text-sm text-gray-500">{product.description}</div>
+                        {product.description && (
+                          <div className="text-sm text-gray-500 truncate max-w-xs">{product.description}</div>
+                        )}
+                        {product.brand && (
+                          <div className="text-xs text-gray-400">Brand: {product.brand}</div>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">{product.sku}</td>
+                      <td className="px-6 py-4 text-center text-sm text-gray-600">{product.category || '-'}</td>
                       <td className="px-6 py-4 text-center text-sm text-gray-900">
                         RM {product.shopee?.price || product.price}
                       </td>
@@ -359,21 +427,32 @@ export default function App() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`px-2 py-1 text-xs rounded-full ${
-                          product.shopee?.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
+                          product.shopee?.status === 'NORMAL'
+                            ? 'bg-green-100 text-green-800'
+                            : product.shopee?.status === 'UNLIST'
+                            ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}>
                           {product.shopee?.status || 'N/A'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => handleDeleteProduct(product._id)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                          title="Delete product"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => setEditingProduct(product)}
+                            className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                            title="Edit product"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeletingProduct(product)}
+                            className="p-1 text-red-600 hover:bg-red-50 rounded"
+                            title="Delete product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -384,11 +463,27 @@ export default function App() {
         </div>
       </div>
 
-      {/* Product Form Modal */}
+      {/* Modals */}
       {showProductForm && (
         <ProductForm
           onClose={() => setShowProductForm(false)}
           onSubmit={handleCreateProduct}
+        />
+      )}
+
+      {editingProduct && (
+        <ProductEditModal
+          product={editingProduct}
+          onClose={() => setEditingProduct(null)}
+          onSubmit={handleUpdateProduct}
+        />
+      )}
+
+      {deletingProduct && (
+        <DeleteConfirmModal
+          product={deletingProduct}
+          onClose={() => setDeletingProduct(null)}
+          onConfirm={handleDeleteProduct}
         />
       )}
     </div>
